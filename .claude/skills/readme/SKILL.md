@@ -32,7 +32,9 @@ The README documents the signal-synthesis model for the project owner's postgrad
 
 ## Referencing claims
 
-Every modelling assumption or conclusion stated in the README must be backed by a citation «[n]» to the «Джерела» list — e.g. a claim that a model is standard practice, a chosen parameter value, a physical simplification, or an accepted convention (like the $-6$ дБ bandwidth reference level). If no trustworthy source can be found, do not present the statement as established fact: either mark it explicitly as a working assumption of this project or ask the owner. Purely mathematical derivations that follow from already-cited formulas need no extra citation.
+Every modelling assumption or conclusion stated in the README must be backed by a citation «[n]» to the «Джерела» list — e.g. a claim that a model is standard practice, a chosen parameter value, a physical simplification, or an accepted convention (like the $-6$ дБ bandwidth reference level). If no trustworthy source can be found, do not present the statement as established fact: either mark it explicitly as a working assumption of this project or ask the owner.
+
+ALWAYS cite any physical law, named relation, or formula imported from outside the document at the exact place it is first stated — including inside explanatory or "intuitive" passages (e.g. $T = 4Z_1Z_2/(Z_1+Z_2)^2$, Stokes relations, $I \propto p^2/Z$). The no-citation exemption covers ONLY algebraic steps that transform formulas already numbered and cited in this README; any new physical input entering a derivation needs its own citation. Verify every cited URL by fetching it (or its DOI metadata) before adding; prefer sources whose exact statement of the formula was actually seen, and cite the page/section when the source is long.
 
 ## Formulas
 
@@ -46,6 +48,8 @@ Every modelling assumption or conclusion stated in the README must be backed by 
 - **Figures**: image, then a bold caption line *below* it: `**Рис. n.** <опис>`. Reference in text as «(рис. n)».
 - **Tables**: bold caption line *above* the table: `**Таблиця n.** <опис>`. Reference in text as «таблиці n».
 - Numbering of formulas, figures, and tables is continuous through the whole document. When inserting new material in the middle, renumber everything after it, including all in-text references.
+- A section must NEVER end with an image, table, formula, or bare caption — always close with at least one sentence of prose (interpretation of the figure, a consequence, or a transition to the next stage). Keep captions to a concise identification of what is shown; put the interpretive discussion (what the reader should see, notable features, practical implications) in body text after the figure.
+- **Multi-panel figures**: every panel carries an italic Cyrillic letter (а, б, в, г, д, ...) in its corner — `plot_signals` in `backscatter/visualization.py` adds these automatically. The figure caption MUST decode every letter: `**Рис. n.** <опис>: а — <панель 1>; б — <панель 2>; ...`. Reference an individual panel in text as «(рис. n, а)». Never describe panels positionally («згори», «середня панель») — use the letters.
 
 ## Document structure
 
