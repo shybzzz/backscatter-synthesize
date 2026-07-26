@@ -7,11 +7,14 @@ description: Generate or update README.md for this project. Use whenever README.
 
 The README documents the signal-synthesis model for the project owner's postgraduate student. It must read like a concise engineering text with a slightly academic tone.
 
+**Audience filter**: not everything the owner says belongs in the README. Hypotheticals, sanity checks, and examples the owner addresses to the assistant («evaluate this X of mine», «what if ...») are conversation material — answer them in chat and do NOT write them into the document unless the owner asks. When unsure whether a discussion is for the student document or for the conversation, ASK before adding it.
+
 ## Language and style
 
 - Write in **Ukrainian**. Code identifiers, commands, and file names stay in English.
 - Engineering style, slightly academic: precise terminology, short justifications for modelling choices (why a parameter value was chosen, what physical effect it reproduces), no marketing language.
 - Use Ukrainian typographic conventions: decimal comma in prose and math ($1{,}1\%$, $6{,}8$), apostrophe in words like «п'єзоелектричний», quotation marks «...».
+- Abbreviations MUST be expanded at first use — «повна назва (АБРЕВІАТУРА)» — and may be used alone afterwards. Applies to Ukrainian and Latin abbreviations alike (СКЗ, АЦП, ПММА, ШІ, SJR). Exempt: SI units (дБ, МГц, мкс) and standard bibliographic marks (DOI). Specialist terms that read like codes (А-скан) get a short parenthetical gloss at first use.
 
 ## Terminology (use exactly these terms)
 
@@ -41,6 +44,7 @@ ALWAYS cite any physical law, named relation, or formula imported from outside t
 - LaTeX in `$$...$$` blocks; inline math in `$...$`.
 - Numbering: TEMPORARILY (GitHub-compatibility fix of 2026-07-26, see CLAUDE.md "Known issues") formulas are numbered with a literal `\qquad (n)` as the last line inside the `$$` block, NOT with `\tag{n}`. Avoid `\!`. Use this same form for new formulas until the owner decides to revert to `\tag{n}`.
 - Every symbol used in a formula or in prose must be defined at first use (e.g. «де $k = 0, 1, 2, \dots$ — номер відліку»).
+- NEVER present a formula bare: every numbered formula must be accompanied by explicit reasoning in prose — either a derivation sketch from already-numbered-and-cited formulas of this document (name them: «за співвідношенням Стокса (6)», «з $R = r^2$ [10]»), or a citation to the external source it is imported from. A formula whose origin the reader cannot reconstruct is a defect; the owner has flagged this twice.
 - Reference formulas in text by number: «(1)», «згідно з (2)».
 - Nontrivial parameter choices get their own numbered formula plus a one-sentence justification.
 
@@ -54,12 +58,16 @@ ALWAYS cite any physical law, named relation, or formula imported from outside t
 
 ## Document structure
 
+BEFORE editing README.md, ALWAYS look at the «## Зміст» table of contents first to understand the document structure and find the correct insertion point — do not guess a section's position from nearby text (a new numbered chapter goes after the last numbered chapter and BEFORE the service sections). Update «Зміст» in the same edit whenever a section is added, renamed, or moved.
+
 1. Title `# backscatter-synthesize` and a short purpose paragraph (dual-element transducer, NDT, model built incrementally).
-2. One numbered section per model stage (`## 1. Зондувальний імпульс`, `## 2. ...`) in signal-chain order: excitation pulse → transducer impulse response → propagation medium → reflectors/scatterers → receive path. Each section: physical description, formula(s), parameter table with defaults, generated figure(s) from `images/`.
-3. `## Структура проєкту` — file tree with one-line descriptions.
-4. `## Використання` — install/run commands and a minimal Python API example.
-5. `## План розвитку` — numbered roadmap; completed stages struck through (`~~...~~`) with «(виконано)».
-6. `## Джерела` — numbered reference list. Cite in text as «[n]» (e.g. after the formula or claim the source supports). Only authoritative, verifiable sources with working web links: textbooks/papers with a DOI link, official library documentation (SciPy, MATLAB, k-Wave, Field II). Verify each URL resolves before adding it. Format: Author. *Title.* — edition. — Publisher, year. — DOI/link; for library docs: `function` — one-line description // Documentation name. — link.
+2. `## Зміст` — table of contents: numbered chapters as a numbered list with GitHub anchor links, then one line «Службові розділи: ...» linking the service sections. Anchors: lowercase, spaces → hyphens, punctuation dropped.
+3. One numbered section per model stage (`## 1. Зондувальний імпульс`, `## 2. ...`) in signal-chain order: excitation pulse → transducer impulse response → propagation medium → reflectors/scatterers → receive path. Each section: physical description, formula(s), parameter table with defaults, generated figure(s) from `images/`.
+4. `## Структура проєкту` — file tree with one-line descriptions.
+5. `## Використання` — install/run commands and a minimal Python API example.
+6. `## План розвитку` — numbered roadmap; completed stages struck through (`~~...~~`) with «(виконано)».
+7. `## Огляд споріднених досліджень` — literature table with DOIs, journal links, citation counts and quartiles, dated.
+8. `## Джерела` — numbered reference list. Cite in text as «[n]» (e.g. after the formula or claim the source supports). Only authoritative, verifiable sources with working web links: textbooks/papers with a DOI link, official library documentation (SciPy, MATLAB, k-Wave, Field II). Verify each URL resolves before adding it. Format: Author. *Title.* — edition. — Publisher, year. — DOI/link; for library docs: `function` — one-line description // Documentation name. — link.
 
 ## Workflow when a model stage changes
 
