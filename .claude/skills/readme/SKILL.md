@@ -38,7 +38,8 @@ ALWAYS cite any physical law, named relation, or formula imported from outside t
 
 ## Formulas
 
-- LaTeX in `$$...$$` blocks, numbered with `\tag{n}`; inline math in `$...$`.
+- LaTeX in `$$...$$` blocks; inline math in `$...$`.
+- Numbering: TEMPORARILY (GitHub-compatibility fix of 2026-07-26, see CLAUDE.md "Known issues") formulas are numbered with a literal `\qquad (n)` as the last line inside the `$$` block, NOT with `\tag{n}`. Avoid `\!`. Use this same form for new formulas until the owner decides to revert to `\tag{n}`.
 - Every symbol used in a formula or in prose must be defined at first use (e.g. «де $k = 0, 1, 2, \dots$ — номер відліку»).
 - Reference formulas in text by number: «(1)», «згідно з (2)».
 - Nontrivial parameter choices get their own numbered formula plus a one-sentence justification.

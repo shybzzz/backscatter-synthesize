@@ -7,16 +7,16 @@
 Випромінювальний елемент збуджується вузькосмуговим радіоімпульсом. Він моделюється як синусоїдальне заповнення під гаусовою обвідною — стандартна модель зондувального імпульсу в ультразвуковій дефектоскопії та діагностиці [1]; саме її реалізують типові функції інструментів моделювання: `scipy.signal.gausspulse` (SciPy) [2], `gauspuls` (MATLAB Signal Processing Toolbox) [3], `toneBurst` (k-Wave) [4]:
 
 $$
-s(t) = \exp\!\left(-\frac{(t - t_c)^2}{2\sigma^2}\right)\,\sin(2\pi f_0 t),
+s(t) = \exp\left(-\frac{(t - t_c)^2}{2\sigma^2}\right)\,\sin(2\pi f_0 t),
 \qquad 0 \le t \le T,
-\tag{1}
+\qquad (1)
 $$
 
 де $f_0$ — частота заповнення; $T = N/f_0$ — тривалість імпульсу, задана кількістю періодів заповнення $N$; $t_c = T/2$ — центр обвідної; $\sigma$ — ширина обвідної. Значення
 
 $$
 \sigma = \frac{T}{6}
-\tag{2}
+\qquad (2)
 $$
 
 обрано так, щоб інтервал $\pm 3\sigma$ охоплював усе вікно, а амплітуда на краях спадала до $e^{-9/2} \approx 1{,}1\%$ від пікової.
@@ -51,14 +51,14 @@ $$
 
 $$
 t_k = k\,\tau, \qquad \tau = \frac{2d}{c},
-\tag{3}
+\qquad (3)
 $$
 
 де $c$ — швидкість поздовжньої хвилі в матеріалі, а $\tau$ — час одного обігу «туди й назад». Амплітуда $k$-го відбиття визначається загасанням, накопиченим уздовж пройденого шляху:
 
 $$
 A_k = 10^{-\alpha \cdot 2 d k / 20},
-\tag{4}
+\qquad (4)
 $$
 
 де $\alpha$ — коефіцієнт загасання в дБ/м на частоті заповнення. Відбиття додаються до результівного сигналу, доки $A_k$ не впаде нижче $10^{-4}$ ($-80$ дБ) або чергове відбиття не вийде за межі вікна спостереження.
@@ -103,14 +103,14 @@ $$
 
 $$
 r = \sqrt{1 - T}
-\tag{5}
+\qquad (5)
 $$
 
 для $T = 0{,}8$ становить $r \approx 0{,}447$. Формула (5) випливає з того, що енергетичний (інтенсивнісний) коефіцієнт відбиття дорівнює квадратові амплітудного: $R = r^2$ [10], а на межі без поглинання $R + T = 1$. Для донної серії потрібен ще добуток амплітудних коефіцієнтів проходження «туди й назад»: за співвідношеннями Стокса $t_{\downarrow} = 1 + r$, $t_{\uparrow} = 1 + r' = 1 - r$ (коефіцієнт відбиття з протилежного боку межі $r' = -r$; співвідношення випливають із неперервності поля на межі та оберненості процесу в часі) [11], звідки
 
 $$
 t_{\downarrow} t_{\uparrow} = (1+r)(1-r) = 1 - r^2 = T,
-\tag{6}
+\qquad (6)
 $$
 
 тобто дворазове перетинання межі послаблює амплітуду рівно в $T$ разів — саме цей множник фігурує у формулі (8).
@@ -125,7 +125,7 @@ $$
 
 $$
 B_j = r^{\,j} \, 10^{-\alpha_p \cdot 2 h j / 20};
-\tag{7}
+\qquad (7)
 $$
 
 2) **серія донних відбиттів розділу 2, спостережувана крізь призму**: кожне $k$-те відбиття двічі перетинає межу (множник $T$), двічі проходить призму (множник $10^{-\alpha_p \cdot 2h/20}$, затримка $2h/c_p$) та $k-1$ разів відбивається від межі назад у сталь (множник $r^{k-1}$):
@@ -133,7 +133,7 @@ $$
 $$
 A_k = T \, r^{\,k-1} \, 10^{-\alpha_p \cdot 2h/20} \, 10^{-\alpha \cdot 2dk/20},
 \qquad t_k = \frac{2h}{c_p} + k\,\frac{2d}{c}.
-\tag{8}
+\qquad (8)
 $$
 
 Змішані шляхи вищих порядків (реверберації призми, що повторно проходять у сталь, і навпаки) на цьому етапі нехтуються; верхня грань призми вважається ідеальним відбивачем.
@@ -163,7 +163,7 @@ $$
 
 $$
 T = \frac{4 Z_1 Z_2}{(Z_1 + Z_2)^2},
-\tag{9}
+\qquad (9)
 $$
 
 де $Z = \rho c$ — акустичний імпеданс середовища ($\rho$ — густина, $c$ — швидкість звуку) [12]. Потрібні значення імпедансів зібрано в таблиці 4.
@@ -208,7 +208,7 @@ $$
 $$
 A_k^{(f)} = T \, r^{\,k-1} r_f^{\,k} \, 10^{-\alpha_p \cdot 2h/20} \, 10^{-\alpha \cdot 2 z_f k/20},
 \qquad t_k^{(f)} = \frac{2h}{c_p} + k\,\frac{2 z_f}{c}.
-\tag{10}
+\qquad (10)
 $$
 
 Третя родина — донна серія, яка при кожному обігу додатково двічі перетинає дефект:
@@ -216,7 +216,7 @@ $$
 $$
 A_k^{(d)} = T \, r^{\,k-1} T_f^{\,k} \, 10^{-\alpha_p \cdot 2h/20} \, 10^{-\alpha \cdot 2dk/20},
 \qquad t_k^{(d)} = \frac{2h}{c_p} + k\,\frac{2d}{c}.
-\tag{11}
+\qquad (11)
 $$
 
 За $R_f = 0$ друга родина зникає, а третя зводиться до моделі розділу 3 (це перевірено чисельно з машинною точністю). Реверберації між дефектом і донною поверхнею (другого порядку за $r_f$) та інші змішані шляхи на цьому етапі знехтувано; дефект вважається плоским частковим відбивачем, що перекриває весь переріз пучка.
@@ -266,7 +266,7 @@ $$
 $$
 \varphi = 2\pi\,\frac{2 z_f}{\lambda},
 \qquad \lambda = \frac{c}{f_0},
-\tag{12}
+\qquad (12)
 $$
 
 де $\lambda \approx 592$ мкм — довжина хвилі в сталі на частоті $10$ МГц. Зауважимо, що обидва відбиття, які формують обіг (від дефекту та від межі оргскло–сталь із боку сталі), є «м'якими» — за ними лежить середовище з меншим імпедансом, тому кожне інвертує фазу хвилі [12], а їхня пара за повний обіг фазу не змінює: інтерференційні умови визначає лише $\varphi$. Відтак послідовні відбиття додаються синфазно ($\varphi = 2\pi m$) на глибинах $z_f = m\,\lambda/2$ і протифазно ($\varphi = \pi(2m-1)$) на глибинах $z_f = (2m-1)\,\lambda/4$. Геометрична сума серії дає підсилення $1/(1 - r_f r) \approx 2{,}3$ у синфазному випадку та ослаблення $1/(1 + r_f r) \approx 0{,}64$ у протифазному ($r_f r \approx 0{,}57$). Ці три випадки показано на рис. 12.
@@ -334,6 +334,34 @@ t, full = synthesize_transducer_signal(s)           # призма + зразо�
 8. Модель відбивачів/розсіювачів: пори, структурний шум, реверберації дефект–дно
 9. Приймальний тракт: шум, підсилення, оцифрування
 
+## Огляд споріднених досліджень
+
+Синтез ультразвукових сигналів і його застосування для навчання систем ШІ розвиваються у трьох взаємопов'язаних напрямах: фізичні моделі сигналу (вимірювальні моделі та параметричні моделі ехо-сигналів), програмні платформи моделювання для масової генерації синтетичних даних та власне методи машинного навчання, треновані на синтетичних або аугментованих даних. Ключові праці зібрано в таблиці 6; дані станом на липень 2026 року: кількість цитувань — за Crossref [14], квартилі — за SJR 2024 [13].
+
+**Таблиця 6.** Споріднені дослідження: моделювання ультразвукових сигналів і ШІ в ультразвуковому контролі
+
+| Рік | Публікація | Автори | Видання | Цит. | Квартиль |
+|---|---|---|---|---|---|
+| 1983 | [A model relating ultrasonic scattering measurements through liquid–solid interfaces to unbounded medium scattering amplitudes](https://doi.org/10.1121/1.390045) | R. B. Thompson, T. A. Gray | [J. Acoust. Soc. Am.](https://pubs.aip.org/asa/jasa) | 188 | Q1 |
+| 2001 | [Model-based estimation of ultrasonic echoes. Part I: Analysis and algorithms](https://doi.org/10.1109/58.920713) | R. Demirli, J. Saniie | [IEEE Trans. UFFC](https://ieeexplore.ieee.org/xpl/RecentIssue.jsp?punumber=58) | 256 | Q1 |
+| 2006 | [CIVA: An expertise platform for simulation and processing NDT data](https://doi.org/10.1016/j.ultras.2006.05.218) | P. Calmon et al. | [Ultrasonics](https://www.sciencedirect.com/journal/ultrasonics) | 72 | Q1 |
+| 2010 | [k-Wave: MATLAB toolbox for the simulation and reconstruction of photoacoustic wave fields](https://doi.org/10.1117/1.3360308) | B. Treeby, B. Cox | [J. Biomedical Optics](https://www.spiedigitallibrary.org/journals/journal-of-biomedical-optics) | 2054 | Q2 |
+| 2012 | [Simulation based validation of the detection capacity of an ultrasonic inspection procedure](https://doi.org/10.1016/j.ijfatigue.2011.09.002) | H. Wirdelius, G. Persson | [Int. J. Fatigue](https://www.sciencedirect.com/journal/international-journal-of-fatigue) | 15 | Q1 |
+| 2019 | [Convolutional neural network for ultrasonic weldment flaw classification in noisy conditions](https://doi.org/10.1016/j.ultras.2018.12.001) | N. Munir et al. | [Ultrasonics](https://www.sciencedirect.com/journal/ultrasonics) | 167 | Q1 |
+| 2021 | [Augmented Ultrasonic Data for Machine Learning](https://doi.org/10.1007/s10921-020-00739-5) | I. Virkkunen et al. | [J. Nondestr. Eval.](https://link.springer.com/journal/10921) | 148 | Q2 |
+| 2021 | [Deep Learning for Ultrasonic Crack Characterization in NDE](https://doi.org/10.1109/tuffc.2020.3045847) | R. Pyle et al. | [IEEE Trans. UFFC](https://ieeexplore.ieee.org/xpl/RecentIssue.jsp?punumber=58) | 132 | Q1 |
+| 2021 | [Automated Flaw Detection in Multi-channel Phased Array Ultrasonic Data Using Machine Learning](https://doi.org/10.1007/s10921-021-00796-4) | O. Siljama et al. | [J. Nondestr. Eval.](https://link.springer.com/journal/10921) | 64 | Q2 |
+| 2022 | [Deep learning in automated ultrasonic NDE — developments, axioms and opportunities](https://doi.org/10.1016/j.ndteint.2022.102703) (огляд) | S. Cantero-Chinchilla et al. | [NDT & E International](https://www.sciencedirect.com/journal/ndt-and-e-international) | 151 | Q1 |
+| 2022 | [DPAI: A data-driven simulation-assisted-physics learned AI model for transient ultrasonic wave propagation](https://doi.org/10.1016/j.ultras.2021.106671) | T. Gantala, K. Balasubramaniam | [Ultrasonics](https://www.sciencedirect.com/journal/ultrasonics) | 13 | Q1 |
+| 2023 | [Machine learning for ultrasonic nondestructive examination of welding defects: A systematic review](https://doi.org/10.1016/j.ultras.2022.106854) (огляд) | H. Sun, P. Ramuhalli, R. E. Jacob | [Ultrasonics](https://www.sciencedirect.com/journal/ultrasonics) | 90 | Q1 |
+| 2024 | [Defect detection using integration of ultrasonic least-squares reverse time migration and generative adversarial network](https://doi.org/10.1080/10589759.2024.2413690) | Y. Fan et al. | [Nondestr. Test. Eval.](https://www.tandfonline.com/journals/gnte20) | 3 | Q2 |
+| 2024 | [Rail Flaw Imaging Prototype Based on Improved Ultrasonic Synthetic Aperture Focus Method](https://doi.org/10.32548/2024.me-04371) | J. Huang, F. Lanza di Scalea | [Materials Evaluation](https://www.asnt.org/standards-publications/materials-evaluation) | 0 | Q4 |
+| 2026 | [Generating Synthetic Ultrasonic Testing Data with Deep Learning: Comparing Simulated and Deep Learning-Based Flaw Responses](https://doi.org/10.58286/33360) | Watson та ін. | [e-J. Nondestr. Test.](https://www.ndt.net/) | 0 | — |
+
+Розподіл за напрямами такий. Фізичні моделі сигналу заклали Thompson і Gray (вимірювальна модель, 1983) та Demirli і Saniie (параметрична модель А-скана як суми гаусових ехо-імпульсів — математично найближчий опублікований аналог формул (1), (10), (11) цього проєкту). Платформи моделювання (CIVA, SimSUNDT, k-Wave) використовують для масової генерації синтетичних інспекційних даних. Найактивніший напрям 2019–2026 років — машинне навчання для ультразвукового контролю, треноване на синтетичних або аугментованих даних (Virkkunen, Pyle, Siljama, Gantala, Fan), з оглядами Cantero-Chinchilla (2022) і Sun (2023).
+
+Щодо статусу видань: засадничі та найцитованіші праці напряму зосереджені у виданнях Q1–Q2, і це свідчить про високу актуальність тематики. Праці у виданнях нижчих квартилів і в неіндексованих виданнях (Materials Evaluation — Q4; e-Journal of Nondestructive Testing — конференційне видання NDT.net без квартиля) — це переважно найсвіжіші розвідувальні результати 2024–2026 років, які ще не встигли набрати цитувань; їхній низький формальний статус відображає радше новизну та формат видання, ніж релевантність. Ця модель за задумом належить до лінії Demirli–Saniie (легкий параметричний синтезатор ехо-серій) і призначена для генерації розмічених навчальних даних — підхід, безпосередньо продовжуваний у працях Virkkunen, Pyle і Gantala.
+
 ## Джерела
 
 1. Schmerr L. W. Jr. *Fundamentals of Ultrasonic Nondestructive Evaluation: A Modeling Approach.* — 2nd ed. — Springer, 2016. — DOI: [10.1007/978-3-319-30463-2](https://link.springer.com/book/10.1007/978-3-319-30463-2)
@@ -348,5 +376,7 @@ t, full = synthesize_transducer_signal(s)           # призма + зразо�
 10. Ultrasound // College Physics (OpenStax). — § 17.7: intensity reflection coefficient. — [phys.libretexts.org/.../17.07:_Ultrasound](https://phys.libretexts.org/Bookshelves/College_Physics/College_Physics_1e_(OpenStax)/17:_Physics_of_Hearing/17.07:_Ultrasound)
 11. Claerbout J. F. Reflection and transmission coefficients // Fundamentals of Geophysical Data Processing. — Stanford Exploration Project. — [sepwww.stanford.edu/sep/prof/waves/fgdp8/paper_html/node2.html](https://sepwww.stanford.edu/sep/prof/waves/fgdp8/paper_html/node2.html)
 12. Moore G. D. Lecture 18: Reflection and Impedance // Physics of Music (PH224), lecture notes. — TU Darmstadt. — pp. 1–4 (виведення з умов неперервності тиску та швидкості на межі; тонкошарове проходження; імпеданс повітря). — [theorie.ikp.physik.tu-darmstadt.de/qcd/moore/ph224/notes/lecture18.pdf](https://theorie.ikp.physik.tu-darmstadt.de/qcd/moore/ph224/notes/lecture18.pdf)
+13. SCImago Journal & Country Rank (SJR): квартилі видань за 2024 рік. — [scimagojr.com](https://www.scimagojr.com/)
+14. Crossref REST API: бібліографічні метадані та кількість цитувань. — [api.crossref.org](https://api.crossref.org/)
 13. Acoustic Properties of Solids // Onda Corporation. — 2003. — [ondacorp.com/wp-content/uploads/2020/09/Solids.pdf](https://www.ondacorp.com/wp-content/uploads/2020/09/Solids.pdf)
 14. Acoustic Properties of Liquids // Onda Corporation. — 2003. — [ondacorp.com/wp-content/uploads/2020/09/Liquids.pdf](https://www.ondacorp.com/wp-content/uploads/2020/09/Liquids.pdf)

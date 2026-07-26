@@ -33,4 +33,4 @@ Numerical synthesis of the backscattered signal of a dual-element (pitch-catch, 
 
 ## Known issues
 
-- The owner sees GitHub's LaTeX rendering break (vertically stacked tokens) in their browser; deliberately left as-is. If asked to fix: drop `\!` and `\tag{n}` (number formulas in plain text instead) — do not abandon `$$` math.
+- The owner sees GitHub's LaTeX rendering break (vertically stacked tokens) in their browser. **2026-07-26: the compatibility fix WAS applied to README.md** — all `\!` removed and every `\tag{n}` replaced by a literal `\qquad (n)` at the end of the math block. The owner may want to REVERT to `\tag{n}` later; treat the `\qquad (n)` form as temporary, keep it consistent for any new formulas until told otherwise, and do not abandon `$$` math either way.
