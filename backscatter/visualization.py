@@ -308,3 +308,81 @@ def plot_signal(
     if show:
         plt.show()
     return ax
+
+
+def plot_depth_sensitivity(
+    depths: np.ndarray,
+    sensitivity: np.ndarray | list[tuple[str, np.ndarray]],
+    path_excess: np.ndarray,
+    marks: list[tuple[float, str]] | None = None,
+    focal_depth: float | None = None,
+    title: str = "Dual-element probe: depth sensitivity and V-path",
+    show: bool = True,
+    save_path: str | Path | None = None,
+) -> np.ndarray:
+    """Plot the depth sensitivity D(z) and the V-path excess of a dual probe.
+
+    Two lettered panels (README, section 8): а — the depth sensitivity
+    D(z) with optional vertical marks (e.g. the backwall echo depths
+    k d); б — the excess of the V-path half-length over the depth,
+    sqrt(z^2 + a^2) - z, i.e. the apparent-thickness error of
+    thickness gauging without V-path correction.
+
+    Args:
+        depths: Unfolded one-way depths z in meters.
+        sensitivity: D(z) values, same length as `depths`; or a list
+            of (label, values) pairs to overlay several curves.
+        path_excess: sqrt(z^2 + a^2) - z in meters, same length.
+        marks: Optional (depth_m, label) pairs drawn as vertical
+            lines on both panels.
+        focal_depth: Optional crossing depth z_F to mark on panel а.
+        title: Figure title.
+        show: If True, display the figure immediately.
+        save_path: If given, save the figure there (parent folders
+            are created as needed).
+
+    Returns:
+        Array of the two matplotlib Axes.
+    """
+    z_mm = np.asarray(depths, dtype=float) * 1e3
+    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(6.4, 5.2))
+    box = {"facecolor": "white", "edgecolor": "0.7", "pad": 3}
+    ax = axes[0]
+    curves = (
+        sensitivity if isinstance(sensitivity, list)
+        else [("$D(z)$", sensitivity)]
+    )
+    for label, values in curves:
+        ax.plot(z_mm, values, linewidth=1.4, label=label)
+    ax.axhline(0.5, color="0.5", linestyle=":", linewidth=1.0,
+               label="$-6$ dB level")
+    if focal_depth is not None:
+        ax.axvline(focal_depth * 1e3, color="C3", linewidth=1.2,
+                   alpha=0.85, label="focal depth $z_F$")
+    ax.set_ylabel("Sensitivity $D(z)$")
+    ax.set_ylim(0, 1.08)
+    ax = axes[1]
+    ax.plot(z_mm, np.asarray(path_excess, dtype=float) * 1e3, linewidth=1.4,
+            color="C1")
+    ax.set_ylabel("V-path excess, mm")
+    ax.set_xlabel("Unfolded depth $z$, mm")
+    for letter, ax in zip("аб", axes):
+        for depth_m, label in marks or []:
+            ax.axvline(depth_m * 1e3, color="0.3", linestyle="--",
+                       linewidth=0.9)
+            if ax is axes[0]:
+                ax.text(depth_m * 1e3 + 0.3, 0.04, label, ha="left",
+                        va="bottom", fontsize=9)
+        ax.grid(True)
+        ax.text(0.01, 0.92, letter, transform=ax.transAxes, ha="left",
+                va="top", fontsize=13, fontstyle="italic", bbox=box)
+    axes[0].legend(loc="upper right", fontsize=8, framealpha=0.9)
+    axes[0].set_title(title)
+    fig.tight_layout()
+    if save_path is not None:
+        save_path = Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(save_path, dpi=150)
+    if show:
+        plt.show()
+    return axes

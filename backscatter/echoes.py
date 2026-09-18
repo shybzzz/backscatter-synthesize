@@ -19,10 +19,34 @@ surface S = 1, t_0 = 0; for one observed through an intermediate
 layer (e.g. a delay-line prism) S collects the transmission and
 attenuation losses of that layer and t_0 its propagation delay.
 
+Two optional hooks generalize the train to oblique (pitch-catch)
+geometries, where the echo of the k-th round trip is the echo of a
+reflector at the UNFOLDED one-way depth z_k = k z (mirror-image
+method):
+
+- `sensitivity(z_k)` — an extra amplitude factor depending on the
+  unfolded depth, e.g. the depth sensitivity D(z) of a dual-element
+  probe whose transmit and receive beams cross under the surface
+  (README, section 8);
+- `path_length(z_k)` — the two-way sound path in the medium for that
+  unfolded depth; the default 2 z_k is the normal-incidence path, a
+  dual-element probe gives the V-path 2 sqrt(z_k**2 + a**2). It sets
+  both the arrival time (path / c) and the attenuation
+  (10**(-alpha * path / 20)).
+
+With both hooks the k-th echo is
+
+    A_k = S * r**k * D(k z) * 10 ** (-alpha * L(k z) / 20),
+    t_k = t_0 + L(k z) / c.
+
 Used by backscatter.specimen (backwall echoes, z = specimen
-thickness, r = 1) and backscatter.transducer (prism reverberation
-and the specimen train seen through the prism).
+thickness, r = 1), backscatter.transducer (prism reverberation and
+the specimen train seen through the prism) and
+backscatter.dual_element (the same families seen by a dual-element
+probe).
 """
+
+from collections.abc import Callable
 
 import numpy as np
 
@@ -34,6 +58,15 @@ DEFAULT_N_SAMPLES = 1400
 # is considered fully attenuated and the train is terminated.
 ECHO_AMPLITUDE_FLOOR = 1e-4
 
+# Hooks of the oblique-geometry generalization: amplitude factor and
+# two-way sound path as functions of the unfolded one-way depth (m).
+DepthFunction = Callable[[float], float]
+
+
+def normal_path_length(depth: float) -> float:
+    """Two-way sound path at normal incidence: 2 z (the default hook)."""
+    return 2.0 * depth
+
 
 def add_scatterer_echoes(
     pulse: np.ndarray,
@@ -44,6 +77,8 @@ def add_scatterer_echoes(
     reflectivity: float = 1.0,
     scale: float = 1.0,
     time_offset: float = 0.0,
+    sensitivity: DepthFunction | None = None,
+    path_length: DepthFunction | None = None,
     n_samples: int = DEFAULT_N_SAMPLES,
     signal: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -65,6 +100,14 @@ def add_scatterer_echoes(
             (transfer losses outside the reverberation cavity).
         time_offset: Extra delay t_0 in seconds added to every echo
             (transfer delay outside the reverberation cavity).
+        sensitivity: Optional amplitude factor D(z_k) of the echo as
+            a function of its unfolded one-way depth z_k = k * depth
+            (e.g. the depth sensitivity of a dual-element probe);
+            None means 1 for every echo.
+        path_length: Optional two-way sound path L(z_k) in the medium
+            as a function of the unfolded one-way depth; None means
+            the normal-incidence path 2 z_k. Determines both the
+            arrival time L/c and the attenuation along L.
         n_samples: Length of the result signal; ignored if `signal`
             is given.
         signal: Optional existing signal to add the echoes to; it is
@@ -80,15 +123,20 @@ def add_scatterer_echoes(
         signal = np.asarray(signal, dtype=float).copy()
         n_samples = len(signal)
     t = np.arange(n_samples) / sample_rate
+    if path_length is None:
+        path_length = normal_path_length
 
-    round_trip = 2 * depth / velocity
     for k in range(1, n_samples):
+        unfolded_depth = k * depth
+        path = path_length(unfolded_depth)
         amplitude = (
-            scale * reflectivity**k * 10 ** (-attenuation * 2 * depth * k / 20)
+            scale * reflectivity**k * 10 ** (-attenuation * path / 20)
         )
+        if sensitivity is not None:
+            amplitude *= sensitivity(unfolded_depth)
         if abs(amplitude) < ECHO_AMPLITUDE_FLOOR:
             break
-        start = round((time_offset + k * round_trip) * sample_rate)
+        start = round((time_offset + path / velocity) * sample_rate)
         if start >= n_samples:
             break
         stop = min(start + len(pulse), n_samples)

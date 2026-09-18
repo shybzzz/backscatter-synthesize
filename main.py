@@ -4,10 +4,19 @@ from pathlib import Path
 
 import numpy as np
 
+from backscatter.dual_element import (
+    CROSSED_BEAM_ROOF_ANGLE,
+    DEFAULT_HALF_SEPARATION,
+    beam_half_separation,
+    depth_sensitivity,
+    synthesize_dual_element_signal,
+    v_path_length,
+)
 from backscatter.flaw import synthesize_flaw_signal
 from backscatter.pulse import generate_pulse
 from backscatter.structural_noise import synthesize_structural_signal
 from backscatter.schematic import (
+    draw_dual_element_schematic,
     draw_flaw_schematic,
     draw_prism_schematic,
     draw_schematic,
@@ -24,6 +33,7 @@ from backscatter.transducer import (
 )
 from backscatter.visualization import (
     plot_attenuation_components,
+    plot_depth_sensitivity,
     plot_signal,
     plot_signals,
     plot_signals_with_depth_histogram,
@@ -39,6 +49,33 @@ MARKERS = [
     (FRONT_TIME, "green", "front surface"),
     (BACKWALL_TIME, "blue", "first backwall"),
 ]
+# Dual-element probe (README, section 8): the first backwall echo
+# travels the V-path 2 sqrt(d^2 + a^2) instead of 2 d. Crossed-beam
+# scenario of section 8: roof angle 3.5 deg with the axes crossing at
+# z_F = d; parallel-beam default of section 8.1: a = 1.5 mm.
+HALF_SEPARATION_CROSSED = beam_half_separation(
+    DEFAULT_THICKNESS, CROSSED_BEAM_ROOF_ANGLE
+)
+CROSSED_BEAMS = {
+    "roof_angle": CROSSED_BEAM_ROOF_ANGLE,
+    "half_separation": HALF_SEPARATION_CROSSED,
+}
+
+
+def dual_markers(half_separation: float) -> list:
+    return [
+        (FRONT_TIME, "green", "front surface"),
+        (
+            FRONT_TIME
+            + v_path_length(DEFAULT_THICKNESS, half_separation) / DEFAULT_VELOCITY,
+            "blue",
+            "first backwall (V-path)",
+        ),
+    ]
+
+
+MARKERS_DUAL = dual_markers(HALF_SEPARATION_CROSSED)
+MARKERS_STRAIGHT = dual_markers(DEFAULT_HALF_SEPARATION)
 # The bare-specimen model of README section 2 has no prism: the front
 # surface is at t = 0 and the first backwall echo one round trip later.
 MARKERS_BARE = [
@@ -236,6 +273,94 @@ def main() -> None:
         title="Flaw depth vs. train overlap (d = 10 mm)",
         save_path=IMAGES_DIR / "flaw_depths.png",
         vlines=MARKERS,
+    )
+
+    # Dual-element probe (README, section 8): geometry, depth
+    # sensitivity D(z) with the V-path excess, and the A-scans of
+    # sections 6 and 7 re-synthesized for the crossed-beam geometry.
+    draw_dual_element_schematic(save_path=IMAGES_DIR / "scheme_dual.png")
+    z = np.linspace(0.0, 3 * DEFAULT_THICKNESS, 601)
+    depth_marks = [(k * DEFAULT_THICKNESS, f"{k}d") for k in (1, 2, 3)]
+    plot_depth_sensitivity(
+        z,
+        depth_sensitivity(z, **CROSSED_BEAMS),
+        v_path_length(z, HALF_SEPARATION_CROSSED) / 2 - z,
+        marks=depth_marks,
+        focal_depth=DEFAULT_THICKNESS,
+        title="Crossed beams (3.5°): depth sensitivity and V-path excess",
+        save_path=IMAGES_DIR / "dual_sensitivity.png",
+    )
+
+    # Same frozen microstructure (seed 1) seen by the single-element
+    # delay-line probe of section 6 and by the crossed-beam dual probe.
+    t, dual_noisy = synthesize_dual_element_signal(pulse, rng=1, **CROSSED_BEAMS)
+    plot_signals(
+        t,
+        [
+            ("single element (delay line), R = 0.4", noisy),
+            ("dual element (crossed beams), same microstructure", dual_noisy),
+        ],
+        title="Structural noise: single- vs dual-element probe",
+        save_path=IMAGES_DIR / "dual_structural_noise.png",
+        vlines=MARKERS_DUAL,
+    )
+
+    # Calibrated steels of table 7 with the crossed-beam dual probe.
+    def steel_signals_dual(**probe):
+        return [
+            (
+                label,
+                synthesize_dual_element_signal(
+                    pulse,
+                    attenuation=attenuation,
+                    backscattered_energy=backscatter,
+                    rng=1,
+                    **probe,
+                )[1],
+            )
+            for label, attenuation, backscatter in calibrated_steels
+        ]
+
+    plot_signals(
+        t,
+        steel_signals_dual(**CROSSED_BEAMS),
+        title="Calibrated steels, dual probe with crossed beams (table 7)",
+        save_path=IMAGES_DIR / "dual_steels_calibrated.png",
+        vlines=MARKERS_DUAL,
+    )
+
+    # Section 8.1: parallel beams (roof angle 0), the working assumption
+    # for the "straight" probe П112-10-6/2-А-01 and the module default.
+    # D(z) is then the constant exp(-a^2/w^2); the V-path stays.
+    plot_depth_sensitivity(
+        z,
+        [
+            ("$\\theta_p = 0$ (parallel beams, default)", depth_sensitivity(z)),
+            ("$\\theta_p = 3.5°$ (crossed beams, section 8)",
+             depth_sensitivity(z, **CROSSED_BEAMS)),
+        ],
+        v_path_length(z) / 2 - z,
+        marks=depth_marks,
+        title="Parallel beams: depth sensitivity and V-path excess",
+        save_path=IMAGES_DIR / "dual_straight_sensitivity.png",
+    )
+    t, straight_noisy = synthesize_dual_element_signal(pulse, rng=1)
+    plot_signals(
+        t,
+        [
+            ("crossed beams, $\\theta_p = 3.5°$", dual_noisy),
+            ("parallel beams, $\\theta_p = 0$", straight_noisy),
+        ],
+        title="Dual-element probe: crossed vs parallel beams",
+        save_path=IMAGES_DIR / "dual_straight_noise.png",
+        vlines=MARKERS_STRAIGHT,
+    )
+    plot_signals(
+        t,
+        steel_signals_dual(),
+        title="Calibrated steels, dual probe with parallel beams (table 7)",
+        save_path=IMAGES_DIR / "dual_straight_steels.png",
+        vlines=MARKERS_STRAIGHT,
     )
 
 

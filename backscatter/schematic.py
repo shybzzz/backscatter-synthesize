@@ -1,4 +1,4 @@
-"""Schematics of the measurement setup (README, figs. 2 and 4).
+"""Schematics of the measurement setup (README, figs. 2, 4, 7 and 16).
 
 Draws a cross-section of the plane-parallel specimen with the
 dual-element transducer on its outer surface and the pulse propagation
@@ -16,7 +16,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Arc, Polygon, Rectangle
 
 # Layout constants (arbitrary drawing units): specimen occupies
 # y in [-D, 0], the transducer sits above the outer surface y = 0.
@@ -400,6 +400,195 @@ def draw_flaw_schematic(
 
     ax.set_xlim(-1.9, width + 1.0)
     ax.set_ylim(axis_y - 1.9, 1.8)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    fig.tight_layout()
+
+    if save_path is not None:
+        save_path = Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(save_path, dpi=150)
+    if show:
+        plt.show()
+    return ax
+
+
+def draw_dual_element_schematic(
+    save_path: str | Path | None = None,
+    show: bool = True,
+) -> plt.Axes:
+    """Draw the dual-element probe cross-section (README, fig. 16).
+
+    Unlike the unfolded-time schematics above, this is a true
+    geometric cross-section in the plane of the two elements: the
+    transmitter and receiver prisms are inclined toward each other by
+    the roof angle theta_p, the beams refract at the plexiglass-steel
+    interface (Snell's law, formula (19)), cross at the focal depth
+    z_F (formula (20)) and the transmitted beam reaches the receiver
+    along a V-shaped path after the backwall reflection. Angles and
+    the beam width are exaggerated for legibility (theta_p = 12 deg
+    instead of 3.5 deg); the refracted angle follows Snell's law with
+    the real velocity ratio of the model, and the specimen is drawn
+    deeper than the crossing depth to separate the two notions.
+    """
+    fig, ax = plt.subplots(figsize=(10, 7))
+    theta = np.deg2rad(12.0)  # drawn roof angle (exaggerated)
+    beta = np.arcsin(5920.0 / 2730.0 * np.sin(theta))  # Snell (19)
+    a = 4.0  # half-separation of the beam entry points
+    z_f = a / np.tan(beta)  # crossing depth (20)
+    D = 12.0  # drawn specimen thickness (deeper than z_F on purpose)
+    H = 9.0  # prism length along the beam axis
+    w = 2.2  # beam half-width in the prism
+    f = w / np.cos(theta)  # half-footprint of the beam on the interface
+    width = 26.0
+
+    # Specimen cross-section.
+    ax.add_patch(
+        Rectangle((-width / 2, -D), width, D, facecolor="0.88",
+                  edgecolor="black", hatch="..", zorder=0)
+    )
+    label_style = {"fontsize": 10,
+                   "bbox": {"facecolor": "white", "edgecolor": "none", "pad": 2}}
+    ax.text(width / 2 - 0.3, -D / 2 - 2.2, "сталевий зразок", ha="right",
+            va="center", **label_style)
+    ax.text(-width / 2 + 0.3, -D - 0.4, "донна поверхня", ha="left",
+            va="top", fontsize=10)
+    ax.text(width / 2 - 0.3, 0.35, "зовнішня поверхня", ha="right",
+            va="bottom", fontsize=10)
+
+    def prism(sign):
+        """Prism polygon, element and axis of the transmitter (sign -1)
+        or the receiver (+1); returns the element center, the unit
+        vector along the axis and the unit vector across it."""
+        # The transmitter axis leans left, the receiver axis right.
+        u = np.array([-sign * np.sin(theta), np.cos(theta)])
+        n = np.array([np.cos(theta), sign * np.sin(theta)])
+        entry = np.array([sign * a, 0.0])
+        center = entry + H * u
+        inner, outer = 0.35, f + 1.2  # bottom face from the barrier out
+        p_in = np.array([sign * inner, 0.0])
+        p_out = np.array([entry[0] + sign * outer, 0.0])
+        # Sides parallel to the axis, top face perpendicular to it
+        # through the element center.
+        top_in = p_in + u * ((center - p_in) @ u)
+        top_out = p_out + u * ((center - p_out) @ u)
+        ax.add_patch(Polygon([p_in, p_out, top_out, top_in], closed=True,
+                             facecolor="0.95", edgecolor="black",
+                             hatch="//", zorder=1))
+        # Piezo element: a thick bar across the top face.
+        ax.add_patch(Polygon([center - w * n, center + w * n,
+                              center + w * n + 0.7 * u,
+                              center - w * n + 0.7 * u], closed=True,
+                             facecolor="0.55", edgecolor="black", zorder=3))
+        return center, u, n
+
+    c_t, u_t, n_t = prism(-1)
+    c_r, u_r, n_r = prism(+1)
+    ax.text(c_t[0] - 0.4, c_t[1] + 1.3, "випромінювач", ha="center",
+            fontsize=10)
+    ax.text(c_r[0] + 0.4, c_r[1] + 1.3, "приймач", ha="center", fontsize=10)
+    ax.text(-a - 3.4, 3.0, "призма\n(оргскло)", ha="center", va="center",
+            fontsize=9, bbox={"facecolor": "white", "edgecolor": "none",
+                              "pad": 1.5}, zorder=4)
+
+    # Acoustic barrier between the prisms.
+    y_bar = c_t[1] + 0.2
+    ax.add_patch(Rectangle((-0.3, 0), 0.6, y_bar, facecolor="0.25",
+                           edgecolor="black", zorder=2))
+    ax.annotate("акустичний екран", xy=(0.0, y_bar), xytext=(0.0, y_bar + 1.5),
+                fontsize=10, ha="center", va="bottom",
+                arrowprops={"arrowstyle": "-", "color": "black",
+                            "linewidth": 0.8})
+    ax.text(0, y_bar + 3.2, "роздільно-суміщений перетворювач", ha="center",
+            fontsize=11)
+
+    # Beams as translucent bands: transmit (blue) down to the backwall
+    # and back up, receive field (green) down from the receiver.
+    def band(x0, sign, color, alpha, y_top=0.0, y_bot=-D):
+        dx = np.tan(beta) * (y_top - y_bot)
+        pts = [(x0 - f, y_top), (x0 + f, y_top),
+               (x0 + f + sign * dx, y_bot), (x0 - f + sign * dx, y_bot)]
+        ax.add_patch(Polygon(pts, closed=True, facecolor=color,
+                             edgecolor="none", alpha=alpha, zorder=1))
+
+    # Bands inside the prisms (along the inclined axes).
+    for c, u, n, color in ((c_t, u_t, n_t, "C0"), (c_r, u_r, n_r, "C2")):
+        entry = c - H * u
+        pts = [c - w * n, c + w * n,
+               entry + np.array([f, 0.0]), entry - np.array([f, 0.0])]
+        ax.add_patch(Polygon(pts, closed=True, facecolor=color,
+                             edgecolor="none", alpha=0.18, zorder=2))
+    band(-a, +1, "C0", 0.25)  # transmit, going down-right
+    x_bw = -a + np.tan(beta) * D  # transmit axis at the backwall
+    band(x_bw, +1, "C0", 0.12, y_top=-D, y_bot=0.0)  # reflected, up-right
+    band(a, -1, "C2", 0.25)  # receive field, going down-left
+
+    # Beam axes: transmit solid with an arrow, receive dashed.
+    x_ret = -a + 2 * np.tan(beta) * D  # transmit axis back at the surface
+    ax.plot([c_t[0], -a, x_bw, x_ret], [c_t[1], 0, -D, 0], color="C0",
+            linewidth=1.8, zorder=5)
+    ax.annotate("", xy=(x_bw, -D), xytext=(-a, 0),
+                arrowprops={"arrowstyle": "-|>", "color": "C0",
+                            "linewidth": 1.8, "shrinkA": 0, "shrinkB": 0},
+                zorder=5)
+    ax.plot([c_r[0], a, a - np.tan(beta) * D], [c_r[1], 0, -D], color="C2",
+            linewidth=1.8, linestyle="--", zorder=5)
+
+    # Crossing point and the overlap zone label.
+    ax.plot(0, -z_f, marker="o", color="C3", markersize=6, zorder=6)
+    ax.annotate("зона перетину пучків\n(псевдофокус)", xy=(0.6, -z_f + 0.4),
+                xytext=(8.4, -z_f + 2.8), fontsize=10, ha="center",
+                arrowprops={"arrowstyle": "-", "color": "black",
+                            "linewidth": 0.8},
+                bbox={"facecolor": "white", "edgecolor": "none", "pad": 2})
+
+    # Angles: roof angle at the transmitter (between its axis and the
+    # normal) and the refracted angle below the interface.
+    ax.plot([-a, -a], [-3.5, 4.5], color="0.4", linewidth=0.8,
+            linestyle=":", zorder=4)
+    ax.add_patch(Arc((-a, 0), 6, 6, angle=0, theta1=90,
+                     theta2=90 + np.degrees(theta), color="black",
+                     linewidth=1.0, zorder=6))
+    ax.text(-a - 1.2, 3.35, r"$\theta_p$", ha="right", va="bottom",
+            fontsize=12)
+    ax.add_patch(Arc((-a, 0), 6.5, 6.5, angle=0, theta1=270,
+                     theta2=270 + np.degrees(beta), color="black",
+                     linewidth=1.0, zorder=6))
+    ax.text(-a + 1.3, -3.9, r"$\beta$", ha="left", va="top", fontsize=12)
+
+    # Dimensions (just below the surface): 2a between the entry points
+    # and the lateral offset Delta of the returning beam from the
+    # receiver (formula (21)); z_F, d and h on the sides.
+    y_dim = -1.1
+    dim_box = {"facecolor": "white", "edgecolor": "none", "pad": 1.5}
+    ax.annotate("", xy=(a, y_dim), xytext=(-a, y_dim),
+                arrowprops={"arrowstyle": "<->", "color": "black"})
+    ax.text(0, y_dim - 0.25, "$2a$", ha="center", va="top", fontsize=12,
+            bbox=dim_box, zorder=6)
+    ax.annotate("", xy=(x_ret, y_dim), xytext=(a, y_dim),
+                arrowprops={"arrowstyle": "<->", "color": "black"})
+    ax.text((a + x_ret) / 2, y_dim - 0.25, r"$\Delta$", ha="center",
+            va="top", fontsize=12, bbox=dim_box, zorder=6)
+    x_dim = -width / 2 + 1.2
+    ax.annotate("", xy=(x_dim, 0), xytext=(x_dim, -z_f),
+                arrowprops={"arrowstyle": "<->", "color": "black"})
+    ax.text(x_dim - 0.3, -z_f / 2, "$z_F$", ha="right", va="center",
+            fontsize=12)
+    ax.plot([x_dim - 0.5, 0], [-z_f, -z_f], color="0.4", linewidth=0.8,
+            linestyle=":", zorder=4)
+    x_dim2 = width / 2 - 1.2
+    ax.annotate("", xy=(x_dim2, 0), xytext=(x_dim2, -D),
+                arrowprops={"arrowstyle": "<->", "color": "black"})
+    ax.text(x_dim2 + 0.3, -D / 2, "$d$", ha="left", va="center", fontsize=12)
+    h_from = c_r + 4.3 * n_r
+    h_to = c_r - H * u_r + 4.3 * n_r
+    ax.annotate("", xy=h_from, xytext=h_to,
+                arrowprops={"arrowstyle": "<->", "color": "black"})
+    mid = (h_from + h_to) / 2
+    ax.text(mid[0] + 0.4, mid[1], "$h$", ha="left", va="center", fontsize=12)
+
+    ax.set_xlim(-width / 2 - 1.5, width / 2 + 1.5)
+    ax.set_ylim(-D - 1.6, y_bar + 4.4)
     ax.set_aspect("equal")
     ax.axis("off")
     fig.tight_layout()

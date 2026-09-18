@@ -36,6 +36,13 @@ Neglected (working assumptions): multiple scattering (echoes that
 involve more than one scatterer), scattering of the upward-returning
 coherent wave, and reverberation of the noise itself.
 
+`add_structural_noise` accepts the same oblique-geometry hooks as
+backscatter.echoes.add_scatterer_echoes (`sensitivity`,
+`path_length`, evaluated at the unfolded one-way depth
+`depth_offset` + z_i); backscatter.dual_element uses them to expose
+the frozen microstructure to the crossed beams of a dual-element
+probe (README, section 8).
+
 Note on attenuation bookkeeping: with structural noise enabled the
 scattering part of attenuation is carried by R_s (equivalent to
 ~220 dB/m at the defaults), so the `attenuation` parameter should be
@@ -51,6 +58,7 @@ import numpy as np
 from backscatter.echoes import (
     DEFAULT_N_SAMPLES,
     ECHO_AMPLITUDE_FLOOR,
+    DepthFunction,
     add_scatterer_echoes,
 )
 from backscatter.flaw import DEFAULT_CONTACT_TRANSMITTED_ENERGY
@@ -85,6 +93,9 @@ def add_structural_noise(
     signs: np.ndarray | None = None,
     scale: float = 1.0,
     time_offset: float = 0.0,
+    depth_offset: float = 0.0,
+    sensitivity: DepthFunction | None = None,
+    path_length: DepthFunction | None = None,
     rng: np.random.Generator | int | None = None,
     n_samples: int = DEFAULT_N_SAMPLES,
     signal: np.ndarray | None = None,
@@ -113,6 +124,23 @@ def add_structural_noise(
         scale: Transfer amplitude factor S of the path to the
             specimen surface.
         time_offset: Transfer delay t_0 in seconds.
+        depth_offset: Unfolded one-way depth (m) already travelled in
+            the specimen before this pass — k * thickness for the
+            pass illuminated by the k-th reverberation of the
+            coherent pulse. Only the hooks below and the attenuation
+            see it: the scatterer at depth z_i is treated as a
+            reflector at the unfolded depth depth_offset + z_i, so
+            the attenuation of its echo covers the whole unfolded
+            path (the caller must then NOT include the round-trip
+            attenuation of earlier passes in `scale`). With the
+            default 0 the pass is attenuated over 2 z_i only, as in
+            README formula (15).
+        sensitivity: Optional amplitude factor D(z) as a function of
+            the unfolded one-way depth (e.g. the depth sensitivity of
+            a dual-element probe); None means 1.
+        path_length: Optional two-way sound path L(z) as a function
+            of the unfolded one-way depth; None means 2 z. Sets the
+            arrival time L/c and the attenuation along L.
         rng: Seed or numpy Generator for reproducible realizations.
         n_samples: Length of the result signal; ignored if `signal`
             is given.
@@ -145,14 +173,20 @@ def add_structural_noise(
         n_samples = len(signal)
     t = np.arange(n_samples) / sample_rate
 
+    # The hooks must accept NumPy arrays (they are evaluated for all
+    # scatterers at once).
+    unfolded = depth_offset + depths
+    paths = 2.0 * unfolded if path_length is None else path_length(unfolded)
     eps = 1.0 - (1.0 - backscattered_energy) ** (1.0 / n_scatterers)
     r_s = np.sqrt(eps)
     amplitudes = (
         scale * signs * r_s * (1.0 - eps) ** np.arange(n_scatterers)
-        * 10 ** (-attenuation * 2 * depths / 20)
+        * 10 ** (-attenuation * paths / 20)
     )
+    if sensitivity is not None:
+        amplitudes = amplitudes * sensitivity(unfolded)
     starts = np.rint(
-        (time_offset + 2 * depths / velocity) * sample_rate
+        (time_offset + paths / velocity) * sample_rate
     ).astype(int)
     keep = starts < n_samples
     starts, amplitudes = starts[keep], amplitudes[keep]
